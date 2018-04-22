@@ -213,21 +213,40 @@ function ModalRemote(modalId) {
      */
     function successRemoteResponse(response) {
 
+        if (response.forceClose !== undefined && response.forceClose) {
+            this.hide();
+        }
+
         // Reload datatable if response contain forceReload field
         if (response.forceReload !== undefined && response.forceReload) {
             if (response.forceReload == 'true') {
                 // Backwards compatible reload of fixed crud-datatable-pjax
                 $.pjax.reload({container: '#crud-datatable-pjax'});
             } else {
+              if (response.forceUrl) {
+                $.pjax.reload({container: response.forceReload, url: response.forceUrl});
+              } else {
                 $.pjax.reload({container: response.forceReload});
+              }
             }
         }
 
-        // Close modal if response contains forceClose field
-        if (response.forceClose !== undefined && response.forceClose) {
-            this.hide();
+        if (response.forceRedirect !== undefined) {
+       	    if (response.forceMessage !== undefined) {
+      		      var message = {
+                  title: '',
+                  text: response.forceMessage.text,
+                  type: response.forceMessage.type,
+		  html: true,
+                };
+      		      swal(message, function() {
+      			         window.location.href = response.forceRedirect;
+      		      });
+      	    } else {
+      	    	window.location.href = response.forceRedirect;
+      	    }
             return;
-        }
+      	}
 
         if (response.size !== undefined)
             this.setSize(response.size);
@@ -312,7 +331,7 @@ function ModalRemote(modalId) {
 	            'btn btn-primary',
 	            function (e) {
 	                var data;
-	
+
 	                // Test if browser supports FormData which handles uploads
 	                if (window.FormData) {
 	                    data = new FormData($('#ModalRemoteConfirmForm')[0]);
@@ -325,7 +344,7 @@ function ModalRemote(modalId) {
 	                        data.pks = selectedIds;
 	                    data = data.serializeArray();
 	                }
-	
+
 	                instance.doRemote(
 	                    dataUrl,
 	                    dataRequestMethod,
